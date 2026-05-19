@@ -3,6 +3,7 @@ import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
 import { Star, Settings, Gift, X, ChevronDown, ChevronUp } from "lucide-react"
+import Layout from "../components/Layout"
 import { fetchWithAuth } from "../lib/fetch-with-auth"
 import { useToast } from "../context/toast"
 import { TableSkeleton, CardSkeleton } from "../components/Skeleton"
@@ -130,6 +131,7 @@ export default function Loyalty() {
   const kshValue = settings ? (redeemForm.watch("points") || 0) * settings.kshPerPoint : 0
 
   return (
+    <Layout>
     <div className="p-6 max-w-4xl mx-auto space-y-6">
       <div className="flex items-center justify-between">
         <div>
@@ -335,5 +337,6 @@ export default function Loyalty() {
         </div>
       )}
     </div>
+    </Layout>
   )
 }

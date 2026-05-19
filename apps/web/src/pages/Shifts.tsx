@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react"
 import { Clock, LogIn, LogOut, Timer } from "lucide-react"
+import Layout from "../components/Layout"
 import { fetchWithAuth } from "../lib/fetch-with-auth"
 import { useAuth } from "../context/auth"
 import { useToast } from "../context/toast"
@@ -84,6 +85,7 @@ export default function Shifts() {
   const isOwnerOrManager = user?.role === "owner" || user?.role === "manager"
 
   return (
+    <Layout>
     <div className="p-6 max-w-3xl mx-auto space-y-8">
       <div>
         <h1 className="text-2xl font-bold text-zinc-900 dark:text-white">Shifts</h1>
@@ -204,5 +206,6 @@ export default function Shifts() {
         </div>
       )}
     </div>
+    </Layout>
   )
 }

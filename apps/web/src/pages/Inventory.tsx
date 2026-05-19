@@ -3,6 +3,7 @@ import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
 import { Plus, Pencil, Trash2, AlertTriangle, X, Minus, History } from "lucide-react"
+import Layout from "../components/Layout"
 import { fetchWithAuth } from "../lib/fetch-with-auth"
 import { useToast } from "../context/toast"
 import { TableSkeleton } from "../components/Skeleton"
@@ -146,6 +147,7 @@ export default function Inventory() {
   const canSubmit = (() => !isSubmitting)()
 
   return (
+    <Layout>
     <div className="p-6 max-w-4xl mx-auto space-y-6">
       <div className="flex items-center justify-between">
         <div>
@@ -389,5 +391,6 @@ export default function Inventory() {
         </div>
       )}
     </div>
+    </Layout>
   )
 }
