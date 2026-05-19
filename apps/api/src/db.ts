@@ -1,14 +1,15 @@
 import mongoose from "mongoose"
-import { MongoClient } from "mongodb"
-
-const uri = process.env.MONGODB_URI!
-
-export const mongoClient = new MongoClient(uri)
-export const mongoDb = mongoClient.db("lava")
 
 export async function connectDB() {
+  const uri = process.env.MONGODB_URI
   if (!uri) throw new Error("MONGODB_URI is not set")
-  await mongoClient.connect()
-  await mongoose.connect(uri, { dbName: "lava" })
+
+  await mongoose.connect(uri, {
+    dbName: "lava",
+    family: 4,                      // force IPv4 — fixes SRV resolution on Windows/Bun
+    serverSelectionTimeoutMS: 30000,
+    connectTimeoutMS: 30000,
+  })
+
   console.log("Connected to MongoDB")
 }

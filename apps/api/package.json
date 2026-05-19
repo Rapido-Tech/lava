@@ -7,13 +7,14 @@
   },
   "dependencies": {
     "@lava/shared": "workspace:*",
-    "better-auth": "^1.2.7",
+    "bcryptjs": "^2.4.3",
     "hono": "^4.7.10",
-    "mongodb": "^6.16.0",
+    "jose": "^5.10.0",
     "mongoose": "^8.14.1",
     "zod": "^3.24.4"
   },
   "devDependencies": {
+    "@types/bcryptjs": "^2.4.6",
     "@types/bun": "latest",
     "typescript": "^5.8.3"
   }
