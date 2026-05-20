@@ -18,6 +18,7 @@ import Locations from "./pages/Locations"
 import Shifts from "./pages/Shifts"
 import Inventory from "./pages/Inventory"
 import Loyalty from "./pages/Loyalty"
+import Architecture from "./pages/Architecture"
 
 export default function App() {
   return (
@@ -47,6 +48,7 @@ export default function App() {
               <Route path="/shifts"      element={<ProtectedRoute><Shifts /></ProtectedRoute>} />
               <Route path="/inventory"   element={<ProtectedRoute><Inventory /></ProtectedRoute>} />
               <Route path="/loyalty"     element={<ProtectedRoute><Loyalty /></ProtectedRoute>} />
+              <Route path="/arch" element={<Architecture />} />
               <Route path="/" element={<Navigate to="/login" replace />} />
             </Routes>
           </ErrorBoundary>

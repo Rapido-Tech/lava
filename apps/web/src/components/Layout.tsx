@@ -3,7 +3,7 @@ import { NavLink, useNavigate } from "react-router-dom"
 import {
   LayoutDashboard, ListOrdered, Wrench, Users, UserCircle,
   BarChart2, BadgeCheck, MapPin, ChevronDown, Menu, X, Moon, Sun,
-  Package, Clock, Star,
+  Package, Clock, Star, Network,
 } from "lucide-react"
 import { useAuth } from "../context/auth"
 import { useLocation } from "../context/location"
@@ -42,8 +42,9 @@ const NAV_GROUPS = [
   {
     label: "Business",
     items: [
-      { to: "/reports",   label: "Reports",   icon: BarChart2 },
-      { to: "/locations", label: "Locations", icon: MapPin },
+      { to: "/reports",   label: "Reports",      icon: BarChart2 },
+      { to: "/locations", label: "Locations",    icon: MapPin },
+      { to: "/arch",      label: "Architecture", icon: Network },
     ],
   },
 ]
