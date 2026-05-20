@@ -16,14 +16,19 @@ const customerSchema = z.object({
   notes: z.string().optional(),
 })
 
+function escapeRegex(s: string) {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
+}
+
 customers.get("/", async (c) => {
   const q = c.req.query("q")
   const filter: Record<string, unknown> = { locationId: c.get("locationId") }
   if (q) {
+    const safe = escapeRegex(q.trim())
     filter.$or = [
-      { name: { $regex: q, $options: "i" } },
-      { vehiclePlates: { $regex: q, $options: "i" } },
-      { phone: { $regex: q, $options: "i" } },
+      { name: { $regex: safe, $options: "i" } },
+      { vehiclePlates: { $regex: safe, $options: "i" } },
+      { phone: { $regex: safe, $options: "i" } },
     ]
   }
   const list = await Customer.find(filter).sort({ name: 1 })

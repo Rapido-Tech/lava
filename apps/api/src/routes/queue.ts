@@ -65,6 +65,10 @@ queue.get("/stats", async (c) => {
   return c.json({ vehiclesToday: completed.length, revenueToday: revenue, activeQueue: active })
 })
 
+function escapePlate(plate: string) {
+  return plate.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
+}
+
 queue.post("/", async (c) => {
   const body = await c.req.json().catch(() => null)
   if (!body) return c.json({ error: "Invalid JSON" }, 400)
@@ -74,12 +78,13 @@ queue.post("/", async (c) => {
 
   const locationId = c.get("locationId")
   const plate = parsed.data.vehiclePlate.toUpperCase().trim()
+  const safePlate = escapePlate(plate)
 
   // Detect customer by plate and check for active membership
   let membershipActive = false
   const customer = await Customer.findOne({
     locationId,
-    vehiclePlates: { $regex: new RegExp(`^${plate}$`, "i") },
+    vehiclePlates: { $regex: new RegExp(`^${safePlate}$`, "i") },
   })
   if (customer) {
     const activeMembership = await CustomerMembership.findOne({
@@ -165,7 +170,7 @@ queue.patch("/:id/status", async (c) => {
     const plate = entry.vehiclePlate
     const customer = await Customer.findOne({
       locationId: c.get("locationId"),
-      vehiclePlates: { $regex: new RegExp(`^${plate}$`, "i") },
+      vehiclePlates: { $regex: new RegExp(`^${escapePlate(plate)}$`, "i") },
     }).select("phone name")
     if (customer?.phone) {
       const svc = (entry.serviceId as any)?.name ?? "your vehicle"

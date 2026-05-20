@@ -19,13 +19,17 @@ import shiftsRoutes from "./routes/shifts"
 import inventoryRoutes from "./routes/inventory"
 import loyaltyRoutes from "./routes/loyalty"
 
+const ALLOWED_ORIGINS = new Set(
+  (process.env.CORS_ORIGINS ?? "http://localhost:5173,http://localhost:4173").split(",").map((o) => o.trim())
+)
+
 const app = new Hono()
 
 app.use("*", securityHeaders)
 app.use(
   "*",
   cors({
-    origin: (origin) => (origin?.startsWith("http://localhost") ? origin : null),
+    origin: (origin) => (origin && ALLOWED_ORIGINS.has(origin) ? origin : null),
     credentials: true,
   })
 )

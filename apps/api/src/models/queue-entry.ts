@@ -34,4 +34,9 @@ const queueSchema = new mongoose.Schema(
   { timestamps: true }
 )
 
+// Compound index for the most frequent query: active queue by location
+queueSchema.index({ locationId: 1, status: 1 })
+// Compound index for daily/period reports
+queueSchema.index({ locationId: 1, status: 1, completedAt: -1 })
+
 export const QueueEntry = mongoose.model("QueueEntry", queueSchema)

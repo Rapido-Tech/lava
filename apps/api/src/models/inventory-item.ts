@@ -6,8 +6,8 @@ const inventoryItemSchema = new mongoose.Schema(
     name:               { type: String, required: true, trim: true },
     unit:               { type: String, required: true, trim: true }, // "litres", "kg", "pcs", "bottles"
     category:           { type: String, trim: true, default: "General" },
-    currentStock:       { type: Number, required: true, default: 0 },
-    lowStockThreshold:  { type: Number, required: true, default: 0 },
+    currentStock:       { type: Number, required: true, default: 0, min: 0 },
+    lowStockThreshold:  { type: Number, required: true, default: 0, min: 0 },
     active:             { type: Boolean, default: true },
   },
   { timestamps: true }

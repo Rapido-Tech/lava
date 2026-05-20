@@ -13,4 +13,6 @@ const loyaltyTransactionSchema = new mongoose.Schema(
   { timestamps: true }
 )
 
+loyaltyTransactionSchema.index({ loyaltyAccountId: 1, createdAt: -1 })
+
 export const LoyaltyTransaction = mongoose.model("LoyaltyTransaction", loyaltyTransactionSchema)

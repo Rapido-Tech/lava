@@ -5,6 +5,7 @@ import { LoyaltyAccount } from "../models/loyalty-account"
 import { LoyaltyTransaction } from "../models/loyalty-transaction"
 import { requireAuth } from "../middleware/requireAuth"
 import { requireLocation } from "../middleware/requireLocation"
+import { rateLimit } from "../middleware/rateLimit"
 
 const loyalty = new Hono()
 loyalty.use("*", requireAuth, requireLocation)
@@ -68,7 +69,7 @@ loyalty.get("/:customerId", async (c) => {
 })
 
 // POST /api/loyalty/:customerId/redeem
-loyalty.post("/:customerId/redeem", async (c) => {
+loyalty.post("/:customerId/redeem", rateLimit(10, 60 * 1000), async (c) => {
   const body = await c.req.json().catch(() => null)
   if (!body) return c.json({ error: "Invalid JSON" }, 400)
 

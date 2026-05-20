@@ -94,7 +94,7 @@ reports.get("/daily", async (c) => {
     completedAt: { $gte: from },
   })
     .populate("serviceId", "price")
-    .select("completedAt serviceId")
+    .select("completedAt serviceId payment")
 
   const byDate: Record<string, { date: string; vehicles: number; revenue: number }> = {}
   for (let i = 0; i < days; i++) {
@@ -109,7 +109,8 @@ reports.get("/daily", async (c) => {
     const key = e.completedAt.toISOString().slice(0, 10)
     if (byDate[key]) {
       byDate[key].vehicles++
-      byDate[key].revenue += (e.serviceId as any)?.price ?? 0
+      const paid = (e as any).payment?.amount
+      byDate[key].revenue += paid != null ? paid : ((e.serviceId as any)?.price ?? 0)
     }
   }
 

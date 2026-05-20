@@ -12,4 +12,6 @@ const inventoryLogSchema = new mongoose.Schema(
   { timestamps: true }
 )
 
+inventoryLogSchema.index({ itemId: 1, createdAt: -1 })
+
 export const InventoryLog = mongoose.model("InventoryLog", inventoryLogSchema)
