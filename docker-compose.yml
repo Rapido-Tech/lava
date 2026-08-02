@@ -1,0 +1,27 @@
+services:
+
+  api:
+    image: ghcr.io/rapido-tech/lava-api:latest
+    pull_policy: always
+    container_name: lava-api
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      MONGODB_URI: ${MONGODB_URI}
+      JWT_SECRET: ${JWT_SECRET}
+      CORS_ORIGINS: ${CORS_ORIGINS}
+      TWILIO_ACCOUNT_SID: ${TWILIO_ACCOUNT_SID}
+      TWILIO_AUTH_TOKEN: ${TWILIO_AUTH_TOKEN}
+      TWILIO_FROM_NUMBER: ${TWILIO_FROM_NUMBER}
+    expose:
+      - "3000"
+
+  web:
+    image: ghcr.io/rapido-tech/lava-web:latest
+    pull_policy: always
+    container_name: lava-web
+    restart: unless-stopped
+    depends_on:
+      - api
+    expose:
+      - "80"
