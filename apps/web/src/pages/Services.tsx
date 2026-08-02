@@ -23,7 +23,7 @@ const schema = z.object({
   description:  z.string().optional(),
   price:        z.coerce.number().min(0, "Must be 0 or more"),
   durationMins: z.coerce.number().min(1, "At least 1 minute"),
-  category:     z.string().default("General"),
+  category:     z.string(),
 })
 type FormValues = z.infer<typeof schema>
 

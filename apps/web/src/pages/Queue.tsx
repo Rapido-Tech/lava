@@ -330,7 +330,9 @@ export default function Queue() {
                                 {entry.vehiclePlate}
                               </span>
                               {entry.membershipActive && (
-                                <BadgeCheck size={13} className="text-[#00C2D1]" title="Active membership" />
+                                <span title="Active membership">
+                                  <BadgeCheck size={13} className="text-[#00C2D1]" />
+                                </span>
                               )}
                             </div>
                             {entry.vehicleDescription && (
