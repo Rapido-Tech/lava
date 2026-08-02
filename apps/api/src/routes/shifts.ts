@@ -1,11 +1,12 @@
 import { Hono } from "hono"
+import type { Env } from "../hono"
 import { z } from "zod"
 import { Shift } from "../models/shift"
 import { User } from "../models/user"
 import { requireAuth } from "../middleware/requireAuth"
 import { requireLocation } from "../middleware/requireLocation"
 
-const shifts = new Hono()
+const shifts = new Hono<Env>()
 shifts.use("*", requireAuth, requireLocation)
 
 // GET /api/shifts?date=YYYY-MM-DD — list shifts for a date (defaults to today)

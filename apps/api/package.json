@@ -3,9 +3,11 @@
   "private": true,
   "scripts": {
     "dev": "bun run --watch src/index.ts",
-    "start": "bun run src/index.ts"
+    "build": "tsc -p tsconfig.build.json",
+    "start": "node dist/index.js"
   },
   "dependencies": {
+    "@hono/node-server": "^1.13.8",
     "@lava/shared": "workspace:*",
     "bcryptjs": "^2.4.3",
     "hono": "^4.7.10",

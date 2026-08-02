@@ -1,4 +1,5 @@
 import { Hono } from "hono"
+import type { Env } from "../hono"
 import { z } from "zod"
 import { QueueEntry } from "../models/queue-entry"
 import { Customer } from "../models/customer"
@@ -10,7 +11,7 @@ import { requireAuth } from "../middleware/requireAuth"
 import { requireLocation } from "../middleware/requireLocation"
 import { sendSMS } from "../lib/sms"
 
-const queue = new Hono()
+const queue = new Hono<Env>()
 queue.use("*", requireAuth, requireLocation)
 
 const checkInSchema = z.object({

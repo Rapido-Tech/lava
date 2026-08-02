@@ -1,7 +1,8 @@
 import type { Context, Next } from "hono"
 import { User } from "../models/user"
+import type { Env } from "../hono"
 
-export async function requireLocation(c: Context, next: Next) {
+export async function requireLocation(c: Context<Env>, next: Next) {
   const user = await User.findById(c.get("userId")).select("locationIds")
   const ids = user?.locationIds?.map((id) => id.toString()) ?? []
   if (!ids.length) return c.json({ error: "No location assigned" }, 400)

@@ -2,6 +2,7 @@ import dns from "dns"
 dns.setDefaultResultOrder("ipv4first")
 dns.setServers(["8.8.8.8", "8.8.4.4"])
 
+import { serve } from "@hono/node-server"
 import { Hono } from "hono"
 import { cors } from "hono/cors"
 import { connectDB } from "./db"
@@ -52,7 +53,6 @@ connectDB()
   .then(() => console.log("API ready"))
   .catch((e) => console.error("MongoDB connection failed:", e.message))
 
-export default {
-  port: 3000,
-  fetch: app.fetch,
-}
+serve({ fetch: app.fetch, port: Number(process.env.PORT ?? 3000) }, (info) => {
+  console.log(`API listening on port ${info.port}`)
+})

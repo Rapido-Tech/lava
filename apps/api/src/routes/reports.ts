@@ -1,9 +1,10 @@
 import { Hono } from "hono"
+import type { Env } from "../hono"
 import { QueueEntry } from "../models/queue-entry"
 import { requireAuth } from "../middleware/requireAuth"
 import { requireLocation } from "../middleware/requireLocation"
 
-const reports = new Hono()
+const reports = new Hono<Env>()
 reports.use("*", requireAuth, requireLocation)
 
 function dateRange(period: string): { from: Date; to: Date } {

@@ -1,11 +1,12 @@
 import { Hono } from "hono"
+import type { Env } from "../hono"
 import { z } from "zod"
 import { InventoryItem } from "../models/inventory-item"
 import { InventoryLog } from "../models/inventory-log"
 import { requireAuth } from "../middleware/requireAuth"
 import { requireLocation } from "../middleware/requireLocation"
 
-const inventory = new Hono()
+const inventory = new Hono<Env>()
 inventory.use("*", requireAuth, requireLocation)
 
 const itemSchema = z.object({

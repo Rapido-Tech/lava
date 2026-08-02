@@ -1,4 +1,5 @@
 import { Hono } from "hono"
+import type { Env } from "../hono"
 import { z } from "zod"
 import { MembershipPlan } from "../models/membership-plan"
 import { CustomerMembership } from "../models/customer-membership"
@@ -6,18 +7,20 @@ import { Customer } from "../models/customer"
 import { requireAuth } from "../middleware/requireAuth"
 import { requireLocation } from "../middleware/requireLocation"
 
-const memberships = new Hono()
+const memberships = new Hono<Env>()
 memberships.use("*", requireAuth, requireLocation)
 
 // ── Plans ──────────────────────────────────────────────────────────────────
 
-const planSchema = z.object({
+const planBaseSchema = z.object({
   name: z.string().min(1, "Name is required"),
   description: z.string().optional(),
   type: z.enum(["monthly", "passes"]),
   passCount: z.coerce.number().min(1).optional(),
   price: z.coerce.number().min(0, "Price must be 0 or more"),
-}).refine((d) => d.type !== "passes" || (d.passCount && d.passCount > 0), {
+})
+
+const planSchema = planBaseSchema.refine((d) => d.type !== "passes" || (d.passCount && d.passCount > 0), {
   message: "Pass count is required for pass plans",
   path: ["passCount"],
 })
@@ -45,7 +48,7 @@ memberships.patch("/plans/:id", async (c) => {
   const body = await c.req.json().catch(() => null)
   if (!body) return c.json({ error: "Invalid JSON" }, 400)
 
-  const parsed = planSchema.partial().safeParse(body)
+  const parsed = planBaseSchema.partial().safeParse(body)
   if (!parsed.success) return c.json({ error: parsed.error.issues[0].message }, 400)
 
   const plan = await MembershipPlan.findOneAndUpdate(

@@ -1,11 +1,12 @@
 import { Hono } from "hono"
+import type { Env } from "../hono"
 import { z } from "zod"
 import { Customer } from "../models/customer"
 import { User } from "../models/user"
 import { requireAuth } from "../middleware/requireAuth"
 import { requireLocation } from "../middleware/requireLocation"
 
-const customers = new Hono()
+const customers = new Hono<Env>()
 customers.use("*", requireAuth, requireLocation)
 
 const customerSchema = z.object({

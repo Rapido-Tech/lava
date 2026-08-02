@@ -1,4 +1,5 @@
 import { Hono } from "hono"
+import type { Env } from "../hono"
 import { setCookie, getCookie, deleteCookie } from "hono/cookie"
 import bcrypt from "bcryptjs"
 import { z } from "zod"
@@ -8,7 +9,7 @@ import { signAccessToken, generateRefreshToken } from "../lib/jwt"
 import { requireAuth } from "../middleware/requireAuth"
 import { rateLimit } from "../middleware/rateLimit"
 
-const auth = new Hono()
+const auth = new Hono<Env>()
 
 const isProd = process.env.NODE_ENV === "production"
 

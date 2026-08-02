@@ -1,11 +1,12 @@
 import { Hono } from "hono"
+import type { Env } from "../hono"
 import { z } from "zod"
 import { Location } from "../models/location"
 import { User } from "../models/user"
 import { requireAuth } from "../middleware/requireAuth"
 import { requireRole } from "../middleware/requireRole"
 
-const locations = new Hono()
+const locations = new Hono<Env>()
 locations.use("*", requireAuth)
 
 const TIMEZONES = [
@@ -57,7 +58,7 @@ locations.patch("/:id", requireRole("owner"), async (c) => {
   const user = await User.findById(c.get("userId")).select("locationIds")
   const ids = user?.locationIds?.map((id) => id.toString()) ?? []
 
-  if (!ids.includes(c.req.param("id"))) return c.json({ error: "Location not found" }, 404)
+  if (!ids.includes(c.req.param("id") ?? "")) return c.json({ error: "Location not found" }, 404)
 
   const location = await Location.findByIdAndUpdate(c.req.param("id"), parsed.data, { new: true })
   return c.json({ location })

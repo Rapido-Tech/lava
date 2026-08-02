@@ -1,4 +1,5 @@
 import { Hono } from "hono"
+import type { Env } from "../hono"
 import { z } from "zod"
 import { LoyaltySettings } from "../models/loyalty-settings"
 import { LoyaltyAccount } from "../models/loyalty-account"
@@ -7,7 +8,7 @@ import { requireAuth } from "../middleware/requireAuth"
 import { requireLocation } from "../middleware/requireLocation"
 import { rateLimit } from "../middleware/rateLimit"
 
-const loyalty = new Hono()
+const loyalty = new Hono<Env>()
 loyalty.use("*", requireAuth, requireLocation)
 
 async function getOrCreateSettings(locationId: string) {

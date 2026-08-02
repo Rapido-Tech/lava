@@ -1,11 +1,12 @@
 import { Hono } from "hono"
+import type { Env } from "../hono"
 import { z } from "zod"
 import { Account } from "../models/account"
 import { Location } from "../models/location"
 import { User } from "../models/user"
 import { requireAuth } from "../middleware/requireAuth"
 
-const onboarding = new Hono()
+const onboarding = new Hono<Env>()
 
 const schema = z.object({
   businessName: z.string().min(2, "Business name must be at least 2 characters"),

@@ -1,11 +1,12 @@
 import { Hono } from "hono"
+import type { Env } from "../hono"
 import bcrypt from "bcryptjs"
 import { z } from "zod"
 import { User } from "../models/user"
 import { requireAuth } from "../middleware/requireAuth"
 import { requireRole } from "../middleware/requireRole"
 
-const staff = new Hono()
+const staff = new Hono<Env>()
 staff.use("*", requireAuth)
 
 const createSchema = z.object({
