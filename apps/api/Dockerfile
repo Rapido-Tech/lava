@@ -1,5 +1,8 @@
 # syntax=docker/dockerfile:1
-FROM oven/bun:1-alpine AS base
+# glibc build, not -alpine: the musl/Alpine Bun build segfaults on hosts
+# whose CPU lacks AVX (seen on the Dokploy server) — glibc's baseline
+# codepath handles no-AVX correctly.
+FROM oven/bun:1 AS base
 WORKDIR /app
 
 FROM base AS deps
