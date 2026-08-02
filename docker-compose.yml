@@ -1,6 +1,9 @@
 services:
 
-  api:
+  # Named "lava-api" (not "api") because Dokploy runs every stack's
+  # containers on one shared network for Traefik routing — a generic
+  # service name collides with other projects' same-named services there.
+  lava-api:
     image: ghcr.io/rapido-tech/lava-api:latest
     pull_policy: always
     container_name: lava-api
@@ -22,6 +25,6 @@ services:
     container_name: lava-web
     restart: unless-stopped
     depends_on:
-      - api
+      - lava-api
     expose:
       - "80"
