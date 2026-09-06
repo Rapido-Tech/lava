@@ -73,7 +73,15 @@ auth.post("/signup", rateLimit(3, 10 * 60 * 1000), async (c) => {
   setAuthCookies(c, accessToken, refreshToken)
 
   return c.json(
-    { user: { id: user._id, name: user.name, email: user.email, role: user.role } },
+    {
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        accountId: user.accountId?.toString() ?? null,
+      },
+    },
     201
   )
 })
@@ -110,7 +118,13 @@ auth.post("/login", rateLimit(5, 60 * 1000), async (c) => {
   setAuthCookies(c, accessToken, refreshToken)
 
   return c.json({
-    user: { id: user._id, name: user.name, email: user.email, role: user.role },
+    user: {
+      id: user._id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      accountId: user.accountId?.toString() ?? null,
+    },
   })
 })
 
