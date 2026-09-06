@@ -4,6 +4,7 @@ import { z } from "zod"
 import { useNavigate, Link } from "react-router-dom"
 import { authClient } from "../lib/auth-client"
 import { useAuth } from "../context/auth"
+import PasswordInput from "../components/PasswordInput"
 
 const schema = z.object({
   email: z.string().email("Invalid email"),
@@ -64,9 +65,8 @@ export default function Login() {
 
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">Password</label>
-              <input
+              <PasswordInput
                 {...register("password")}
-                type="password"
                 placeholder="••••••••"
                 className="w-full px-3 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#00C2D1] focus:border-transparent transition"
               />

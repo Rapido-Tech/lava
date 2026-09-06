@@ -4,6 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
 import { Plus, Trash2, X, Check, ShieldCheck, User } from "lucide-react"
 import Layout from "../components/Layout"
+import PasswordInput from "../components/PasswordInput"
 import { fetchWithAuth } from "../lib/fetch-with-auth"
 import { useAuth } from "../context/auth"
 import { useToast } from "../context/toast"
@@ -155,9 +156,8 @@ export default function Staff() {
                   {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email.message}</p>}
                 </div>
                 <div>
-                  <input
+                  <PasswordInput
                     {...register("password")}
-                    type="password"
                     placeholder="Temporary password"
                     className={inputCls}
                   />
