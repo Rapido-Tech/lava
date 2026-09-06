@@ -93,8 +93,10 @@ export default function PlateScanner({ onResult }: Props) {
 
     // video is rendered with object-fit: cover — map the guide box's on-screen
     // position into the video's native pixel space so we crop exactly what
-    // the user framed, not the whole photo.
-    const scale = Math.max(
+    // the user framed, not the whole photo. With "cover", the dimension with
+    // the *smaller* native/display ratio is the one shown edge-to-edge, so
+    // that's the conversion factor (the other axis is what gets cropped).
+    const scale = Math.min(
       video.videoWidth / videoRect.width,
       video.videoHeight / videoRect.height
     )
