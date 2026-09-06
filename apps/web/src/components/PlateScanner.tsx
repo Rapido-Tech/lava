@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react"
 import { Camera, Loader2, X } from "lucide-react"
-import { createWorker } from "tesseract.js"
+import { createWorker, PSM, type Worker } from "tesseract.js"
 
 interface Props {
   onResult: (plate: string) => void
@@ -15,6 +15,25 @@ const PLATE_PATTERN = /\b[A-Z]{2,3}\s?\d{3}\s?[A-Z]\b/
 // so users frame just the plate, which is what the OCR actually needs.
 const GUIDE_ASPECT = "3.5 / 1"
 
+// The engine load (WASM + language data) is the slow part, not the actual
+// recognition — so one worker is created lazily and reused for every scan
+// across the whole session instead of being spun up and torn down each time.
+let workerPromise: Promise<Worker> | null = null
+function getWorker() {
+  if (!workerPromise) {
+    workerPromise = createWorker("eng").then(async (worker) => {
+      await worker.setParameters({
+        tessedit_char_whitelist: "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 ",
+        // the crop is always a single line of text — skipping full-page
+        // layout analysis makes recognition both faster and more accurate
+        tessedit_pageseg_mode: PSM.SINGLE_LINE,
+      })
+      return worker
+    })
+  }
+  return workerPromise
+}
+
 export default function PlateScanner({ onResult }: Props) {
   const [scanning, setScanning] = useState(false)
   const [notFound, setNotFound] = useState(false)
@@ -26,6 +45,9 @@ export default function PlateScanner({ onResult }: Props) {
   const streamRef = useRef<MediaStream | null>(null)
 
   useEffect(() => {
+    // kick off the (slow) engine load as soon as the scanner is on screen,
+    // so it's usually ready by the time the user has framed and captured a photo
+    getWorker()
     return () => {
       streamRef.current?.getTracks().forEach((t) => t.stop())
     }
@@ -98,13 +120,8 @@ export default function PlateScanner({ onResult }: Props) {
     setScanning(true)
     setNotFound(false)
     try {
-      const worker = await createWorker("eng")
-      await worker.setParameters({
-        // restrict to characters found on plates
-        tessedit_char_whitelist: "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 ",
-      })
+      const worker = await getWorker()
       const { data: { text } } = await worker.recognize(source)
-      await worker.terminate()
 
       // collapse whitespace and uppercase
       const cleaned = text.replace(/[^A-Z0-9]/gi, " ").replace(/\s+/g, " ").trim().toUpperCase()
