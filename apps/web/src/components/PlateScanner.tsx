@@ -1,19 +1,24 @@
 import { useEffect, useRef, useState } from "react"
-import { Camera, Loader2, X } from "lucide-react"
+import { Camera, Loader2, Upload, X } from "lucide-react"
 import { createWorker, PSM, type Worker } from "tesseract.js"
 
 interface Props {
   onResult: (plate: string) => void
 }
 
-// Kenyan plates: 2-3 letters, 3 digits, 1 letter (e.g. KDA 452B). Anchoring to
-// this pattern stops a noisy real-world photo (background text, labels, etc.)
-// from dumping a huge garbled OCR string into the plate field.
-const PLATE_PATTERN = /\b[A-Z]{2,3}\s?\d{3}\s?[A-Z]\b/
+// Kenyan plates: 2-4 letters, 3 digits, 1 letter (e.g. KDA 452B, or KMFA 123B
+// for motorcycles). Matched globally rather than taking the first hit — a
+// noisy photo can coincidentally contain more than one plate-shaped
+// substring, and blindly accepting the first one is how a wrong plate (or
+// a chunk of unrelated background text) ends up in the field. We only
+// accept the result when there's exactly one candidate and it accounts for
+// almost the entire cleaned OCR text.
+const PLATE_PATTERN = /\b[A-Z]{2,4}\s?\d{3}\s?[A-Z]\b/g
 
-// Plates are roughly 3.5x wider than tall — used to shape the on-screen guide
-// so users frame just the plate, which is what the OCR actually needs.
-const GUIDE_ASPECT = "3.5 / 1"
+// Most Kenyan plates are a single wide row, but motorcycles/trailers often
+// use a "boxed" two-line plate instead — the guide can be shaped for either.
+const GUIDE_ASPECT = { standard: "3.5 / 1", boxed: "4 / 3" } as const
+type PlateShape = keyof typeof GUIDE_ASPECT
 
 // The engine load (WASM + language data) is the slow part, not the actual
 // recognition — so one worker is created lazily and reused for every scan
@@ -24,9 +29,11 @@ function getWorker() {
     workerPromise = createWorker("eng").then(async (worker) => {
       await worker.setParameters({
         tessedit_char_whitelist: "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 ",
-        // the crop is always a single line of text — skipping full-page
-        // layout analysis makes recognition both faster and more accurate
-        tessedit_pageseg_mode: PSM.SINGLE_LINE,
+        // the crop is a small block of text (one row for a standard plate,
+        // two for a "boxed" one) — skipping full-page layout analysis is
+        // still much faster than AUTO, but SINGLE_BLOCK (unlike SINGLE_LINE)
+        // also handles the two-line case correctly
+        tessedit_pageseg_mode: PSM.SINGLE_BLOCK,
       })
       return worker
     })
@@ -38,6 +45,7 @@ export default function PlateScanner({ onResult }: Props) {
   const [scanning, setScanning] = useState(false)
   const [notFound, setNotFound] = useState(false)
   const [cameraOpen, setCameraOpen] = useState(false)
+  const [plateShape, setPlateShape] = useState<PlateShape>("standard")
 
   const fileInputRef = useRef<HTMLInputElement>(null)
   const videoRef = useRef<HTMLVideoElement>(null)
@@ -127,9 +135,14 @@ export default function PlateScanner({ onResult }: Props) {
 
       // collapse whitespace and uppercase
       const cleaned = text.replace(/[^A-Z0-9]/gi, " ").replace(/\s+/g, " ").trim().toUpperCase()
-      const match = cleaned.match(PLATE_PATTERN)
-      if (match) {
-        onResult(match[0].replace(/\s+/g, " ").trim())
+      const matches = [...cleaned.matchAll(PLATE_PATTERN)]
+      const leftover = cleaned.replace(PLATE_PATTERN, "").trim()
+      // only trust the read when there's exactly one plate-shaped candidate
+      // and it accounts for essentially the whole crop — anything noisier
+      // than that is how a stray digit or background text turns into a
+      // wrong plate instead of a clean "couldn't read it" failure
+      if (matches.length === 1 && leftover.length <= 2) {
+        onResult(matches[0][0].replace(/\s+/g, " ").trim())
       } else {
         setNotFound(true)
       }
@@ -152,29 +165,39 @@ export default function PlateScanner({ onResult }: Props) {
         ref={fileInputRef}
         type="file"
         accept="image/*"
-        capture="environment"
         className="hidden"
         onChange={handleFile}
       />
-      <button
-        type="button"
-        onClick={openCamera}
-        disabled={scanning}
-        title="Scan plate with camera"
-        className="flex items-center justify-center gap-2 h-full px-3 border border-slate-300 rounded-lg text-slate-600 hover:bg-slate-50 disabled:opacity-50 transition whitespace-nowrap text-sm"
-      >
-        {scanning ? (
-          <>
-            <Loader2 size={16} className="animate-spin" />
-            <span className="hidden sm:inline">Scanning…</span>
-          </>
-        ) : (
-          <>
-            <Camera size={16} />
-            <span className="hidden sm:inline">Scan</span>
-          </>
-        )}
-      </button>
+      <div className="flex h-full gap-2">
+        <button
+          type="button"
+          onClick={openCamera}
+          disabled={scanning}
+          title="Scan plate with camera"
+          className="flex items-center justify-center gap-2 h-full px-3 border border-slate-300 rounded-lg text-slate-600 hover:bg-slate-50 disabled:opacity-50 transition whitespace-nowrap text-sm"
+        >
+          {scanning ? (
+            <>
+              <Loader2 size={16} className="animate-spin" />
+              <span className="hidden sm:inline">Scanning…</span>
+            </>
+          ) : (
+            <>
+              <Camera size={16} />
+              <span className="hidden sm:inline">Scan</span>
+            </>
+          )}
+        </button>
+        <button
+          type="button"
+          onClick={() => fileInputRef.current?.click()}
+          disabled={scanning}
+          title="Upload a photo of the plate"
+          className="flex items-center justify-center h-full px-3 border border-slate-300 rounded-lg text-slate-600 hover:bg-slate-50 disabled:opacity-50 transition"
+        >
+          <Upload size={16} />
+        </button>
+      </div>
       {notFound && (
         <p className="absolute top-full right-0 mt-1 text-xs text-amber-600 whitespace-nowrap z-10">
           Couldn't read a plate — enter manually
@@ -194,28 +217,58 @@ export default function PlateScanner({ onResult }: Props) {
           <div
             ref={guideRef}
             className="absolute left-1/2 top-1/2 w-[78%] max-w-sm border-2 border-white/90 rounded-lg"
-            style={{ aspectRatio: GUIDE_ASPECT, transform: "translate(-50%, -50%)", boxShadow: "0 0 0 9999px rgba(0,0,0,0.55)" }}
+            style={{ aspectRatio: GUIDE_ASPECT[plateShape], transform: "translate(-50%, -50%)", boxShadow: "0 0 0 9999px rgba(0,0,0,0.55)" }}
           />
           <p className="absolute left-1/2 top-1/2 -translate-x-1/2 text-white text-sm font-medium text-center w-full px-6"
              style={{ transform: "translate(-50%, calc(-50% - 100px))" }}>
             Fit the plate inside the frame
           </p>
 
-          <div className="absolute bottom-0 inset-x-0 flex items-center justify-center gap-10 pb-10 pt-6 bg-linear-to-t from-black/60 to-transparent">
+          <div className="absolute left-1/2 top-1/2 -translate-x-1/2 flex rounded-full bg-white/10 p-1 text-xs font-medium"
+               style={{ transform: "translate(-50%, calc(-50% - 64px))" }}>
             <button
               type="button"
-              onClick={closeCamera}
-              aria-label="Cancel"
-              className="w-12 h-12 rounded-full flex items-center justify-center bg-white/10 text-white hover:bg-white/20 transition"
+              onClick={() => setPlateShape("standard")}
+              className={`px-3 py-1.5 rounded-full transition ${plateShape === "standard" ? "bg-white text-slate-900" : "text-white/80"}`}
             >
-              <X size={22} />
+              Standard plate
             </button>
             <button
               type="button"
-              onClick={capture}
-              aria-label="Capture"
-              className="w-16 h-16 rounded-full bg-white border-4 border-white/40 hover:scale-105 transition-transform"
-            />
+              onClick={() => setPlateShape("boxed")}
+              className={`px-3 py-1.5 rounded-full transition ${plateShape === "boxed" ? "bg-white text-slate-900" : "text-white/80"}`}
+            >
+              Boxed plate
+            </button>
+          </div>
+
+          <div className="absolute bottom-0 inset-x-0 flex flex-col items-center gap-4 pb-10 pt-6 bg-linear-to-t from-black/60 to-transparent">
+            <div className="flex items-center justify-center gap-10">
+              <button
+                type="button"
+                onClick={closeCamera}
+                aria-label="Cancel"
+                className="w-12 h-12 rounded-full flex items-center justify-center bg-white/10 text-white hover:bg-white/20 transition"
+              >
+                <X size={22} />
+              </button>
+              <button
+                type="button"
+                onClick={capture}
+                aria-label="Capture"
+                className="w-16 h-16 rounded-full bg-white border-4 border-white/40 hover:scale-105 transition-transform"
+              />
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                closeCamera()
+                fileInputRef.current?.click()
+              }}
+              className="text-white/80 text-sm underline underline-offset-2"
+            >
+              Upload photo instead
+            </button>
           </div>
         </div>
       )}
