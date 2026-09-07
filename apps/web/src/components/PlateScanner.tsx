@@ -69,9 +69,23 @@ export default function PlateScanner({ onResult }: Props) {
     }
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: "environment" },
+        video: { facingMode: "environment", width: { ideal: 1920 }, height: { ideal: 1080 } },
       })
       streamRef.current = stream
+      // default is often a fixed focus distance chosen once at stream start —
+      // ask for continuous autofocus so the plate is actually sharp when
+      // it's captured close-up. Not all browsers expose this; best-effort.
+      // `focusMode` is a real, Chrome/Android-supported capability that
+      // TypeScript's DOM lib doesn't know about yet
+      const track = stream.getVideoTracks()[0]
+      const focusModes: string[] | undefined = (track.getCapabilities?.() as MediaTrackCapabilities & { focusMode?: string[] })?.focusMode
+      if (focusModes?.includes("continuous")) {
+        try {
+          await track.applyConstraints({ advanced: [{ focusMode: "continuous" } as MediaTrackConstraintSet] })
+        } catch {
+          // unsupported on this device/browser — ignore
+        }
+      }
       setCameraOpen(true)
     } catch {
       // permission denied, no camera, etc. — fall back to the native picker
@@ -214,61 +228,68 @@ export default function PlateScanner({ onResult }: Props) {
             className="absolute inset-0 w-full h-full object-cover"
           />
 
-          <div
-            ref={guideRef}
-            className="absolute left-1/2 top-1/2 w-[78%] max-w-sm border-2 border-white/90 rounded-lg"
-            style={{ aspectRatio: GUIDE_ASPECT[plateShape], transform: "translate(-50%, -50%)", boxShadow: "0 0 0 9999px rgba(0,0,0,0.55)" }}
-          />
-          <p className="absolute left-1/2 top-1/2 -translate-x-1/2 text-white text-sm font-medium text-center w-full px-6"
-             style={{ transform: "translate(-50%, calc(-50% - 100px))" }}>
-            Fit the plate inside the frame
-          </p>
+          {/* stacked in normal flow (header / guide / footer) instead of
+              absolute-positioned offsets, so the header and footer never
+              overlap the guide box no matter how tall its aspect ratio is */}
+          <div className="absolute inset-0 flex flex-col">
+            <div className="flex flex-col items-center gap-3 pt-8 px-6">
+              <p className="text-white text-sm font-medium text-center">
+                Fit the plate inside the frame
+              </p>
+              <div className="flex rounded-full bg-white/10 p-1 text-xs font-medium">
+                <button
+                  type="button"
+                  onClick={() => setPlateShape("standard")}
+                  className={`px-3 py-1.5 rounded-full transition ${plateShape === "standard" ? "bg-white text-slate-900" : "text-white/80"}`}
+                >
+                  Standard plate
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPlateShape("boxed")}
+                  className={`px-3 py-1.5 rounded-full transition ${plateShape === "boxed" ? "bg-white text-slate-900" : "text-white/80"}`}
+                >
+                  Boxed plate
+                </button>
+              </div>
+            </div>
 
-          <div className="absolute left-1/2 top-1/2 -translate-x-1/2 flex rounded-full bg-white/10 p-1 text-xs font-medium"
-               style={{ transform: "translate(-50%, calc(-50% - 64px))" }}>
-            <button
-              type="button"
-              onClick={() => setPlateShape("standard")}
-              className={`px-3 py-1.5 rounded-full transition ${plateShape === "standard" ? "bg-white text-slate-900" : "text-white/80"}`}
-            >
-              Standard plate
-            </button>
-            <button
-              type="button"
-              onClick={() => setPlateShape("boxed")}
-              className={`px-3 py-1.5 rounded-full transition ${plateShape === "boxed" ? "bg-white text-slate-900" : "text-white/80"}`}
-            >
-              Boxed plate
-            </button>
-          </div>
-
-          <div className="absolute bottom-0 inset-x-0 flex flex-col items-center gap-4 pb-10 pt-6 bg-linear-to-t from-black/60 to-transparent">
-            <div className="flex items-center justify-center gap-10">
-              <button
-                type="button"
-                onClick={closeCamera}
-                aria-label="Cancel"
-                className="w-12 h-12 rounded-full flex items-center justify-center bg-white/10 text-white hover:bg-white/20 transition"
-              >
-                <X size={22} />
-              </button>
-              <button
-                type="button"
-                onClick={capture}
-                aria-label="Capture"
-                className="w-16 h-16 rounded-full bg-white border-4 border-white/40 hover:scale-105 transition-transform"
+            <div className="flex-1 min-h-0 flex items-center justify-center px-6">
+              <div
+                ref={guideRef}
+                className="w-full max-w-sm border-2 border-white/90 rounded-lg"
+                style={{ aspectRatio: GUIDE_ASPECT[plateShape], boxShadow: "0 0 0 9999px rgba(0,0,0,0.55)" }}
               />
             </div>
-            <button
-              type="button"
-              onClick={() => {
-                closeCamera()
-                fileInputRef.current?.click()
-              }}
-              className="text-white/80 text-sm underline underline-offset-2"
-            >
-              Upload photo instead
-            </button>
+
+            <div className="flex flex-col items-center gap-4 pb-10 pt-6 bg-linear-to-t from-black/60 to-transparent">
+              <div className="flex items-center justify-center gap-10">
+                <button
+                  type="button"
+                  onClick={closeCamera}
+                  aria-label="Cancel"
+                  className="w-12 h-12 rounded-full flex items-center justify-center bg-white/10 text-white hover:bg-white/20 transition"
+                >
+                  <X size={22} />
+                </button>
+                <button
+                  type="button"
+                  onClick={capture}
+                  aria-label="Capture"
+                  className="w-16 h-16 rounded-full bg-white border-4 border-white/40 hover:scale-105 transition-transform"
+                />
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  closeCamera()
+                  fileInputRef.current?.click()
+                }}
+                className="text-white/80 text-sm underline underline-offset-2"
+              >
+                Upload photo instead
+              </button>
+            </div>
           </div>
         </div>
       )}
